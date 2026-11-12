@@ -63,6 +63,12 @@ export const DataBlockField: React.FunctionComponent<IDataBlockFieldProps> = ({
   // a second update before the echo of the first one would drop the first one.
   const localValueRef = useRef<{ data: unknown[]; time: number } | null>(null);
 
+  // Records written without a `fieldGroup` belong to the only group the field allows
+  const defaultGroupId = useMemo(() => {
+    const groups = Array.isArray(field.fieldGroup) ? field.fieldGroup : [field.fieldGroup];
+    return groups.length === 1 ? groups[0] : undefined;
+  }, [field.fieldGroup]);
+
   const SELECTION_STATE_KEY = useMemo(
     () => `${filePath}-data-selection-${field.name}`,
     [filePath, field.name]
@@ -254,13 +260,13 @@ export const DataBlockField: React.FunctionComponent<IDataBlockFieldProps> = ({
 
       const fieldData = value[index] as { fieldGroup?: string };
       if (index !== null && settings?.fieldGroups) {
-        const fieldGroup = fieldData?.fieldGroup;
+        const fieldGroup = fieldData?.fieldGroup ?? defaultGroupId;
         const group = settings?.fieldGroups.find((group) => group.id === fieldGroup);
         setSelectedGroup(group);
         setSelectedBlockData(fieldData);
       }
     },
-    [setSelectedIndex, setSelectedBlockData, value]
+    [setSelectedIndex, setSelectedBlockData, value, defaultGroupId, settings?.fieldGroups]
   );
 
   /**
@@ -408,6 +414,7 @@ export const DataBlockField: React.FunctionComponent<IDataBlockFieldProps> = ({
 
       <DataBlockRecords
         fieldGroups={settings.fieldGroups}
+        defaultGroupId={defaultGroupId}
         records={value}
         selectedIndex={selectedIndex}
         onAdd={onAdd}
